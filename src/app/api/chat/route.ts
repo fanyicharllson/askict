@@ -8,6 +8,8 @@ import {
 } from "ai";
 import { buildSystemPrompt } from "@/lib/rag/prompt";
 import { search } from "@/lib/rag/store";
+import { currentUser } from "@/lib/server/auth";
+import { saveChat } from "@/lib/server/chats";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,7 +32,8 @@ function describeError(error: unknown): string {
 }
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages, chatId }: { messages: UIMessage[]; chatId?: string } = await req.json();
+  const user = await currentUser();
 
   // Follow-ups like "and for masters?" need the previous question to make sense,
   // so the search query is the last user message plus the one before it.
@@ -41,6 +44,11 @@ export async function POST(req: Request) {
   const hits = await search(query);
 
   const stream = createUIMessageStream({
+    originalMessages: messages,
+    // signed-in users: save the whole conversation once the answer is complete
+    onFinish: ({ messages: finished }) => {
+      if (user && chatId) saveChat(user.id, chatId, finished);
+    },
     execute: async ({ writer }) => {
       // send the sources first, so the UI can show them under the answer
       hits.forEach((h, i) => {

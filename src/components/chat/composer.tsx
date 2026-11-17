@@ -106,7 +106,7 @@ export function Composer({ onSend, onStop, busy, lang, onLangChange, autoFocus }
     <form onSubmit={submit} className="w-full">
       <div
         className={cn(
-          "rounded-3xl border bg-card shadow-sm transition-shadow focus-within:shadow-md",
+          "rounded-2xl border border-black/10 bg-white/90 shadow-[0_8px_30px_rgba(16,36,26,0.07)] backdrop-blur transition-all focus-within:border-brand/40 focus-within:shadow-[0_8px_30px_rgba(29,91,63,0.14)]",
           listening && "border-brand ring-2 ring-brand/30",
         )}
       >
