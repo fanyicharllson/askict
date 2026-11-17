@@ -395,7 +395,7 @@ export function Chat() {
                           )}
 
                           {!streaming && cited.length > 0 && (
-                            <Sources className="mt-4 mb-0">
+                            <Sources className="mt-4 mb-0" defaultOpen>
                               <SourcesTrigger count={cited.length} className="text-xs font-semibold text-brand hover:text-brand-strong">
                                 <BookOpenIcon className="size-3.5" />
                                 {cited.length} source{cited.length > 1 ? "s" : ""}
