@@ -47,12 +47,14 @@ async function loadPdfs(): Promise<Doc[]> {
     const { text } = await extractText(pdf, { mergePages: false });
     const name = path.basename(file, ".pdf");
     const title = name.replace(/[-_]+/g, " ").replace(/\s*\(\d+\)/g, "").trim();
+    const empty = text.filter((t) => t.trim().length < 40).length;
+    if (empty === text.length) {
+      console.warn(`  ! ${name}.pdf is a scanned image with no text layer - skipped (transcribe it into data/raw/notes/)`);
+      continue;
+    }
     text.forEach((pageText, i) => {
       const clean = pageText.replace(/[ \t]+/g, " ").trim();
-      if (clean.length < 40) {
-        console.warn(`  ! ${name} page ${i + 1} has almost no text (scanned image?) - skipped`);
-        return;
-      }
+      if (clean.length < 40) return; // blank or image-only page
       docs.push({
         id: `pdf-${name}-p${i + 1}`,
         title: `${title} (page ${i + 1})`,

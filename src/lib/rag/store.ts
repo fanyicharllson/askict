@@ -37,5 +37,9 @@ export async function search(question: string, k = TOP_K, audience: "student" | 
   let query = t.vectorSearch(vector).distanceType("cosine").limit(k);
   if (audience === "student") query = query.where("audience = 'all'");
   const rows = (await query.toArray()) as (ChunkRow & { _distance: number })[];
-  return rows.map(({ vector: _v, _distance, ...rest }) => ({ ...rest, score: 1 - _distance }));
+  return rows.map((row) => {
+    const { vector, _distance, ...rest } = row;
+    void vector; // not needed by callers
+    return { ...rest, score: 1 - _distance };
+  });
 }

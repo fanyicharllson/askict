@@ -128,3 +128,20 @@
     @apply font-sans;
   }
 }
+/* AskICT brand: ICT University orange + navy */
+@theme inline {
+  --color-brand: var(--brand);
+  --color-navy: var(--navy);
+}
+:root {
+  --brand: #f37021;
+  --navy: #1b2a5c;
+  --primary: #1b2a5c;
+  --ring: #f37021;
+}
+.dark {
+  --brand: #f5823d;
+  --navy: #2c3f7a;
+  --primary: #f5823d;
+  --ring: #f5823d;
+}

@@ -21,6 +21,14 @@ function textOf(message: UIMessage | undefined): string {
     .trim();
 }
 
+function describeError(error: unknown): string {
+  console.error(error);
+  const message = error instanceof Error ? error.message : String(error);
+  if (/api key/i.test(message)) return "The AI model is not configured: add GOOGLE_GENERATIVE_AI_API_KEY to .env.local.";
+  if (/quota|rate limit|429/i.test(message)) return "The AI model is busy (free quota reached). Wait a minute and try again.";
+  return "Something went wrong while answering. Please try again.";
+}
+
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
 
@@ -52,14 +60,9 @@ export async function POST(req: Request) {
         messages: convertToModelMessages(messages),
         temperature: 0.2,
       });
-      writer.merge(result.toUIMessageStream());
+      writer.merge(result.toUIMessageStream({ onError: describeError }));
     },
-    onError: (error) => {
-      console.error(error);
-      return error instanceof Error && /api key/i.test(error.message)
-        ? "The AI model is not configured. Add GOOGLE_GENERATIVE_AI_API_KEY to .env.local."
-        : "Something went wrong while answering. Please try again.";
-    },
+    onError: describeError,
   });
 
   return createUIMessageStreamResponse({ stream });
