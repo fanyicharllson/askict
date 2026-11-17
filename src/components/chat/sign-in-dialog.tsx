@@ -53,8 +53,8 @@ export function SignInDialog({ open, onClose, onSignedIn }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="signin-title">
-      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
-      <form onSubmit={submit} className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+      <div className="fade-in absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
+      <form onSubmit={submit} className="pop-in relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}
@@ -81,7 +81,7 @@ export function SignInDialog({ open, onClose, onSignedIn }: Props) {
           onChange={(e) => setIdentifier(e.target.value)}
           placeholder="you@example.com or 677 12 34 56"
           autoComplete="username"
-          className="mt-1.5 h-11 w-full rounded-xl border bg-white px-3.5 text-[15px] outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+          className="mt-1.5 h-11 w-full rounded-xl border bg-white px-3.5 text-base text-ink outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
           required
         />
 
@@ -96,7 +96,7 @@ export function SignInDialog({ open, onClose, onSignedIn }: Props) {
           type="password"
           autoComplete="current-password"
           placeholder="••••"
-          className="mt-1.5 h-11 w-full rounded-xl border bg-white px-3.5 text-lg tracking-[0.5em] outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
+          className="mt-1.5 h-11 w-full rounded-xl border bg-white px-3.5 text-lg tracking-[0.5em] text-ink outline-none focus:border-brand focus:ring-3 focus:ring-brand/15"
           required
           minLength={4}
         />

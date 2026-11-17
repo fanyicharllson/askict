@@ -10,6 +10,7 @@ import {
   FlagIcon,
   GlobeIcon,
   MenuIcon,
+  PencilIcon,
   RefreshCwIcon,
   ShieldCheckIcon,
   SquarePenIcon,
@@ -78,6 +79,7 @@ export function Chat() {
   const [voiceLang, setVoiceLang] = useState<VoiceLang>("en-US");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
 
   const refreshChats = useCallback(async () => {
     const res = await fetch("/api/chats");
@@ -114,6 +116,18 @@ export function Chat() {
 
   function send(text: string) {
     setDrawerOpen(false);
+    sendMessage({ text });
+  }
+
+  /** Claude-style edit: replace a question and regenerate everything after it. */
+  function submitEdit() {
+    if (!editing) return;
+    const index = messages.findIndex((m) => m.id === editing.id);
+    const text = editing.text.trim();
+    setEditing(null);
+    if (index < 0 || !text) return;
+    stop();
+    setMessages(messages.slice(0, index));
     sendMessage({ text });
   }
 
@@ -195,28 +209,28 @@ export function Chat() {
   };
 
   return (
-    <div className="flex h-dvh bg-canvas md:gap-2 md:p-2">
-      <Sidebar {...sidebarProps} className="hidden md:flex" />
+    <div className="flex h-dvh bg-canvas lg:gap-2 lg:p-2">
+      <Sidebar {...sidebarProps} className="hidden lg:flex" />
 
       {drawerOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-ink/40" onClick={() => setDrawerOpen(false)} />
-          <Sidebar {...sidebarProps} className="relative bg-canvas shadow-xl" onClose={() => setDrawerOpen(false)} />
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fade-in absolute inset-0 bg-ink/40 backdrop-blur-[2px]" onClick={() => setDrawerOpen(false)} />
+          <Sidebar {...sidebarProps} className="slide-in-left relative max-w-[85vw] bg-canvas shadow-xl" onClose={() => setDrawerOpen(false)} />
         </div>
       )}
 
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-white md:rounded-3xl md:border md:border-black/5 md:shadow-sm">
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-white lg:rounded-3xl lg:border lg:border-black/5 lg:shadow-sm">
         <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-black/5 px-3 sm:px-5">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setDrawerOpen(true)}
-              className="flex size-9 items-center justify-center rounded-lg hover:bg-muted md:hidden"
+              className="flex size-9 items-center justify-center rounded-lg hover:bg-muted lg:hidden"
               aria-label="Open menu"
             >
               <MenuIcon className="size-5" />
             </button>
             <span className="flex items-center gap-2 rounded-full border border-black/10 py-1 pr-3 pl-1.5 text-sm font-semibold text-ink">
-              <LogoMark className="size-6" /> ICT University assistant
+              <LogoMark className="size-6" /> <span className="hidden sm:inline">ICT University assistant</span><span className="sm:hidden">AskICT</span>
             </span>
             <span className="hidden items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand lg:flex">
               <ShieldCheckIcon className="size-3.5" /> Answers from official ICTU sources
@@ -229,12 +243,12 @@ export function Chat() {
               rel="noreferrer"
               className="hidden h-9 items-center gap-1.5 rounded-xl border border-black/10 px-3 text-sm font-medium text-ink/80 transition-colors hover:bg-muted sm:flex"
             >
-              <FlagIcon className="size-4 text-gold" /> Report an issue
+              <FlagIcon className="size-4 text-brand" /> Report an issue
             </a>
             {!empty && (
               <button
                 onClick={newChat}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-black/10 px-3 text-sm font-medium text-ink/80 transition-colors hover:bg-muted md:hidden"
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-black/10 px-3 text-sm font-medium text-ink/80 transition-colors hover:bg-muted lg:hidden"
               >
                 <SquarePenIcon className="size-4" /> New
               </button>
@@ -249,7 +263,7 @@ export function Chat() {
             ) : (
               <button
                 onClick={() => setSignInOpen(true)}
-                className="h-9 rounded-xl bg-ink px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-strong"
+                className="h-9 rounded-xl bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-strong"
               >
                 Sign in
               </button>
@@ -258,12 +272,12 @@ export function Chat() {
         </header>
 
         {empty ? (
-          <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-10">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-2/3 bg-[radial-gradient(60%_60%_at_50%_30%,rgba(201,154,46,0.10),transparent)]" />
-            <div className="relative w-full max-w-2xl">
+          <div className="relative flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-8 sm:justify-center sm:py-10">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-2/3 bg-[radial-gradient(60%_55%_at_50%_25%,color-mix(in_oklch,var(--brand)_10%,transparent),transparent)]" />
+            <div className="rise-in relative w-full max-w-2xl">
               <Orb />
               <div className="mt-6 text-center">
-                <p className="bg-gradient-to-r from-brand to-gold bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
+                <p className="bg-gradient-to-r from-brand-strong to-brand bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
                   {user ? "Welcome back" : "Hello, ICTU"}
                 </p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-[32px]">What would you like to know?</h1>
@@ -272,11 +286,12 @@ export function Chat() {
                 <Composer onSend={send} onStop={stop} busy={busy} lang={voiceLang} onLangChange={setVoiceLang} autoFocus />
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {STARTERS.map(({ icon: Icon, title, question }) => (
+                {STARTERS.map(({ icon: Icon, title, question }, i) => (
                   <button
                     key={title}
                     onClick={() => send(question)}
-                    className="group rounded-2xl border border-black/10 bg-white p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md"
+                    className="group rise-in flex flex-col items-start rounded-2xl border border-black/10 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-md"
+                    style={{ animationDelay: `${120 + i * 70}ms` }}
                   >
                     <span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand transition-colors group-hover:bg-brand group-hover:text-white">
                       <Icon className="size-4" />
@@ -291,7 +306,7 @@ export function Chat() {
                   <button
                     key={c}
                     onClick={() => send(c)}
-                    className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-ink/70 transition-colors hover:border-gold/50 hover:bg-gold-soft hover:text-ink"
+                    className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium text-ink/70 transition-colors hover:border-brand/30 hover:bg-brand-soft hover:text-ink"
                   >
                     {c}
                   </button>
@@ -307,11 +322,57 @@ export function Chat() {
                   const text = textOf(message);
                   const isLast = index === messages.length - 1;
                   if (message.role === "user") {
+                    if (editing?.id === message.id) {
+                      return (
+                        <div key={message.id} className="pop-in ml-auto w-full max-w-[90%] rounded-2xl border border-brand/30 bg-white p-3 shadow-sm sm:max-w-[80%]">
+                          <textarea
+                            autoFocus
+                            value={editing.text}
+                            onChange={(e) => setEditing({ id: message.id, text: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                submitEdit();
+                              }
+                              if (e.key === "Escape") setEditing(null);
+                            }}
+                            rows={Math.min(6, editing.text.split("\n").length + 1)}
+                            className="w-full resize-none bg-transparent text-base text-ink caret-brand outline-none sm:text-[15px]"
+                            aria-label="Edit your question"
+                          />
+                          <div className="mt-2 flex justify-end gap-2">
+                            <button
+                              onClick={() => setEditing(null)}
+                              className="h-8 rounded-lg px-3 text-sm font-medium text-ink/70 transition-colors hover:bg-muted"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={submitEdit}
+                              disabled={!editing.text.trim()}
+                              className="h-8 rounded-lg bg-brand px-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong disabled:opacity-40"
+                            >
+                              Send
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
-                      <Message from="user" key={message.id}>
-                        <MessageContent className="rounded-2xl! rounded-br-md! bg-ink! px-4! py-2.5! text-[15px] text-white!">
+                      <Message from="user" key={message.id} className="rise-in">
+                        <MessageContent className="rounded-2xl! rounded-br-md! bg-brand-soft! px-4! py-2.5! text-[15px] text-ink!">
                           <p className="whitespace-pre-wrap">{text}</p>
                         </MessageContent>
+                        <div className="flex justify-end gap-0.5 text-muted-foreground transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                          <IconButton label={copiedId === message.id ? "Copied" : "Copy"} onClick={() => copy(message)}>
+                            {copiedId === message.id ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+                          </IconButton>
+                          {!busy && (
+                            <IconButton label="Edit" onClick={() => setEditing({ id: message.id, text })}>
+                              <PencilIcon className="size-4" />
+                            </IconButton>
+                          )}
+                        </div>
                       </Message>
                     );
                   }
@@ -321,7 +382,7 @@ export function Chat() {
                   if (!text && !streaming) return null; // e.g. the request failed before any text
                   const question = textOf(messages[index - 1] ?? message);
                   return (
-                    <Message from="assistant" key={message.id} className="max-w-full">
+                    <Message from="assistant" key={message.id} className="rise-in max-w-full">
                       <div className="flex gap-3">
                         <LogoMark className="mt-0.5 size-7" />
                         <div className="min-w-0 flex-1">
@@ -343,7 +404,7 @@ export function Chat() {
                                 {cited.map(({ s, n }) => (
                                   <Source key={s.sourceId} href={s.url} title={s.title}>
                                     <span className="flex items-center gap-2 rounded-xl border border-black/10 px-3 py-2 text-ink/70 transition-colors hover:border-brand/40 hover:text-ink">
-                                      <span className="text-xs font-bold text-gold">[{n}]</span>
+                                      <span className="text-xs font-bold text-brand">[{n}]</span>
                                       {s.url.startsWith("/docs/") ? <FileTextIcon className="size-3.5" /> : <GlobeIcon className="size-3.5" />}
                                       <span className="line-clamp-1">{s.title}</span>
                                     </span>
@@ -354,7 +415,7 @@ export function Chat() {
                           )}
 
                           {!streaming && text && (
-                            <div className="mt-2 flex items-center gap-0.5 text-muted-foreground">
+                            <div className="fade-in mt-2 flex items-center gap-0.5 text-muted-foreground">
                               <IconButton label={copiedId === message.id ? "Copied" : "Copy"} onClick={() => copy(message)}>
                                 {copiedId === message.id ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
                               </IconButton>

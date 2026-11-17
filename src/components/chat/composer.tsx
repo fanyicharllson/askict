@@ -106,7 +106,7 @@ export function Composer({ onSend, onStop, busy, lang, onLangChange, autoFocus }
     <form onSubmit={submit} className="w-full">
       <div
         className={cn(
-          "rounded-2xl border border-black/10 bg-white/90 shadow-[0_8px_30px_rgba(16,36,26,0.07)] backdrop-blur transition-all focus-within:border-brand/40 focus-within:shadow-[0_8px_30px_rgba(29,91,63,0.14)]",
+          "rounded-2xl border border-black/10 bg-white/90 shadow-[0_8px_30px_rgba(16,36,26,0.07)] backdrop-blur transition-all focus-within:border-brand/40 focus-within:shadow-[0_8px_30px_color-mix(in_oklch,var(--brand)_18%,transparent)]",
           listening && "border-brand ring-2 ring-brand/30",
         )}
       >
@@ -118,7 +118,7 @@ export function Composer({ onSend, onStop, busy, lang, onLangChange, autoFocus }
           rows={1}
           autoFocus={autoFocus}
           placeholder={listening ? (lang === "fr-FR" ? "Je vous écoute…" : "Listening…") : "Ask anything about ICT University…"}
-          className="block max-h-[200px] w-full resize-none bg-transparent px-5 pt-4 pb-2 text-[15px] outline-none placeholder:text-muted-foreground"
+          className="block max-h-[200px] w-full resize-none bg-transparent px-5 pt-4 pb-2 text-base text-ink caret-brand outline-none placeholder:text-muted-foreground sm:text-[15px]"
           aria-label="Your question"
         />
         <div className="flex items-center justify-between gap-2 px-3 pb-3">

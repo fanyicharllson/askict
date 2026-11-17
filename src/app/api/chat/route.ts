@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -14,7 +14,8 @@ import { saveChat } from "@/lib/server/chats";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const CHAT_MODEL = process.env.CHAT_MODEL ?? "gemini-2.5-flash";
+// Groq runs open models very fast; free tier at https://console.groq.com/keys
+const CHAT_MODEL = process.env.CHAT_MODEL ?? "llama-3.3-70b-versatile";
 
 function textOf(message: UIMessage | undefined): string {
   return (message?.parts ?? [])
@@ -26,7 +27,7 @@ function textOf(message: UIMessage | undefined): string {
 function describeError(error: unknown): string {
   console.error(error);
   const message = error instanceof Error ? error.message : String(error);
-  if (/api key/i.test(message)) return "The AI model is not configured: add GOOGLE_GENERATIVE_AI_API_KEY to .env.local.";
+  if (/api key/i.test(message)) return "The AI model is not configured: add GROQ_API_KEY to .env.local.";
   if (/quota|rate limit|429/i.test(message)) return "The AI model is busy (free quota reached). Wait a minute and try again.";
   return "Something went wrong while answering. Please try again.";
 }
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
 
       // A — AUGMENTATION (context in the system prompt) + G — GENERATION
       const result = streamText({
-        model: google(CHAT_MODEL),
+        model: groq(CHAT_MODEL),
         system: buildSystemPrompt(hits),
         messages: convertToModelMessages(messages),
         temperature: 0.2,

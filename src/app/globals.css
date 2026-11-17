@@ -128,29 +128,31 @@
     @apply font-sans;
   }
 }
-/* AskICT brand: deep green + gold */
+
+/* AskICT brand: ONE hue (violet) in a few shades + neutral grays.
+   To change the whole app's color, change --hue. */
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
   --color-brand-soft: var(--brand-soft);
-  --color-gold: var(--gold);
-  --color-gold-soft: var(--gold-soft);
+  --color-brand-muted: var(--brand-muted);
   --color-ink: var(--ink);
   --color-canvas: var(--canvas);
 }
 :root {
-  --brand: #1d5b3f;
-  --brand-strong: #133e2b;
-  --brand-soft: #e7f0ea;
-  --gold: #c99a2e;
-  --gold-soft: #f8efd9;
-  --ink: #10241a;
-  --canvas: #eef2ec;
-  --primary: #1d5b3f;
-  --ring: #1d5b3f;
+  --hue: 285;
+  color-scheme: light;
+  --brand: oklch(0.55 0.2 var(--hue));
+  --brand-strong: oklch(0.46 0.2 var(--hue));
+  --brand-muted: oklch(0.78 0.1 var(--hue));
+  --brand-soft: oklch(0.965 0.025 var(--hue));
+  --ink: oklch(0.2 0.02 var(--hue));
+  --canvas: oklch(0.975 0.01 var(--hue));
+  --primary: var(--brand);
+  --ring: var(--brand);
 }
 
-/* glowing orb on the welcome screen */
+/* motion */
 @keyframes orb-float {
   0%, 100% { transform: translateY(0) scale(1); }
   50% { transform: translateY(-6px) scale(1.04); }
@@ -158,9 +160,28 @@
 @keyframes orb-spin {
   to { transform: rotate(360deg); }
 }
-.orb {
-  animation: orb-float 6s ease-in-out infinite;
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-.orb-ring {
-  animation: orb-spin 14s linear infinite;
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.orb { animation: orb-float 6s ease-in-out infinite; }
+.orb-ring { animation: orb-spin 14s linear infinite; }
+.rise-in { animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pop-in { animation: pop-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.slide-in-left { animation: slide-in-left 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fade-in { animation: fade-in 0.2s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .orb, .orb-ring, .rise-in, .pop-in, .slide-in-left, .fade-in { animation: none; }
 }

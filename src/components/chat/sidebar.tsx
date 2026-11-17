@@ -81,7 +81,7 @@ export function Sidebar(props: Props) {
       <div className="px-3">
         <button
           onClick={onNewChat}
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-ink text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-strong"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-strong"
         >
           <PlusIcon className="size-4" /> New chat
         </button>
@@ -146,8 +146,8 @@ export function Sidebar(props: Props) {
             <p className="px-2 text-sm text-muted-foreground">{query ? "No chat matches your search." : "Your saved chats will appear here."}</p>
           )
         ) : (
-          <div className="rounded-2xl border border-gold/30 bg-gold-soft/60 p-4">
-            <BookmarkIcon className="size-5 text-gold" />
+          <div className="rounded-2xl border border-brand/15 bg-brand-soft p-4">
+            <BookmarkIcon className="size-5 text-brand" />
             <p className="mt-2 text-sm font-bold text-ink">Keep your answers</p>
             <p className="mt-1 text-xs leading-relaxed text-ink/70">
               You can ask without an account. Sign in with your email or phone to save your chats and find them later.
@@ -169,7 +169,7 @@ export function Sidebar(props: Props) {
           rel="noreferrer"
           className="mb-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-ink/70 transition-colors hover:bg-black/5 hover:text-ink"
         >
-          <MessageCircleWarningIcon className="size-4 text-gold" /> Report an issue
+          <MessageCircleWarningIcon className="size-4 text-brand" /> Report an issue
         </a>
         {user && (
           <div className="flex items-center gap-2.5 rounded-2xl bg-white p-2.5 shadow-sm">
