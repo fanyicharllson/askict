@@ -22,7 +22,7 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
 
 1. **Retrieval**: a local embedding model (`multilingual-e5-small`) turns the question into a vector, and LanceDB returns the passages whose vectors are closest (cosine similarity).
 2. **Augmentation**: those passages are inserted, numbered, into the prompt.
-3. **Generation**: the LLM (Llama 3.3 70B on Groq) answers using only those passages, cites them, and says when it does not know.
+3. **Generation**: the LLM (GPT-OSS 120B on Groq) answers using only those passages, cites them, and says when it does not know.
 
 ## Stack
 
@@ -32,7 +32,7 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
 | Chat streaming | Vercel AI SDK |
 | Vector database | LanceDB (embedded, files in `data/index/`) |
 | Embeddings | `Xenova/multilingual-e5-small` via transformers.js (runs locally, free) |
-| LLM | Llama 3.3 70B via Groq (`llama-3.3-70b-versatile`) |
+| LLM | GPT-OSS 120B via Groq (`openai/gpt-oss-120b`) |
 
 ## Run it
 

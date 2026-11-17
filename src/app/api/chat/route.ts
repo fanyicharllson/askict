@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 // Groq runs open models very fast; free tier at https://console.groq.com/keys
-const CHAT_MODEL = process.env.CHAT_MODEL ?? "llama-3.3-70b-versatile";
+const CHAT_MODEL = process.env.CHAT_MODEL ?? "openai/gpt-oss-120b";
 
 function textOf(message: UIMessage | undefined): string {
   return (message?.parts ?? [])
@@ -28,6 +28,8 @@ function describeError(error: unknown): string {
   console.error(error);
   const message = error instanceof Error ? error.message : String(error);
   if (/api key/i.test(message)) return "The AI model is not configured: add GROQ_API_KEY to .env.local.";
+  if (/model_not_found|does not exist|decommissioned/i.test(message))
+    return "The AI model set in CHAT_MODEL is not available on Groq anymore. Pick another one at console.groq.com/docs/models.";
   if (/quota|rate limit|429/i.test(message)) return "The AI model is busy (free quota reached). Wait a minute and try again.";
   return "Something went wrong while answering. Please try again.";
 }

@@ -272,9 +272,9 @@ export function Chat() {
         </header>
 
         {empty ? (
-          <div className="relative flex flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-8 sm:justify-center sm:py-10">
+          <div className="relative flex flex-1 flex-col items-center overflow-y-auto px-4 pt-12 pb-8 sm:pb-10">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-2/3 bg-[radial-gradient(60%_55%_at_50%_25%,color-mix(in_oklch,var(--brand)_10%,transparent),transparent)]" />
-            <div className="rise-in relative w-full max-w-2xl">
+            <div className="rise-in relative my-auto w-full max-w-2xl">
               <Orb />
               <div className="mt-6 text-center">
                 <p className="bg-gradient-to-r from-brand-strong to-brand bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
