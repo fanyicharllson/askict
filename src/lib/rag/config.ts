@@ -20,4 +20,4 @@ export const CHUNK_SIZE = 1000; // characters (~170 words)
 export const CHUNK_OVERLAP = 200;
 
 /** How many passages we retrieve per question. */
-export const TOP_K = 6;
+export const TOP_K = 8;

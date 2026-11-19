@@ -40,6 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# AskICT: all collected data, the vector database and the embedding model stay on this laptop
-/data/
+# AskICT data
+# committed: data/raw (dataset) and data/index (vector database)
+# local only: user accounts + saved chats, the downloaded embedding model, the cloned ictukb repo
+/data/app.db*
+/data/models/
+/data/external/
+# the official fee PDF contains bank account numbers; we commit its transcription (data/raw/notes) instead
+/data/raw/pdf/
 !.env.example

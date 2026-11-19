@@ -40,6 +40,7 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
 npm install
 cp .env.example .env.local      # add your GROQ_API_KEY
 npm run collect                 # download the website (≈2 min, polite 20 s delay)
+npm run import:ictukb           # import verified pages of the open ICTU knowledge base
 npm run ingest                  # chunk + embed + build the vector DB
 npm run ask -- "When do exams start?"   # test retrieval only
 npm run dev                     # http://localhost:3000
@@ -48,3 +49,13 @@ npm run dev                     # http://localhost:3000
 Add documents by dropping PDFs in `data/raw/pdf/` or markdown notes in `data/raw/notes/`, then run `npm run ingest` again.
 
 `data/` is git-ignored: the collected data and the vector database stay on the machine that builds them.
+
+The dataset (`data/raw/`) and the vector database (`data/index/`) are committed, so a fresh clone can run `npm run dev` straight away (the embedding model downloads itself on first use). User accounts, saved chats and the original fee PDF stay local.
+
+## How it works
+
+See [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md): the two models, the indexing pipeline, what happens on each question (hybrid search, fusion, prompt, generation) and definitions of every term.
+
+## Credits
+
+Course timetables, ERP guides, procedures and more come from the verified pages of the open [ICT University Knowledge Base](https://github.com/Egbemichel/ictukb) (MIT licence) by our classmates.

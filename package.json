@@ -10,7 +10,8 @@
     "collect": "tsx scripts/collect.ts",
     "ingest": "tsx scripts/ingest.ts",
     "ask": "tsx scripts/ask.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "import:ictukb": "tsx scripts/import-ictukb.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.63",

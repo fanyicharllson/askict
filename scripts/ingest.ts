@@ -15,7 +15,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { extractText, getDocumentProxy } from "unpdf";
-import { chunkText } from "../src/lib/rag/chunk";
+import { chunkMarkdown, chunkText } from "../src/lib/rag/chunk";
 import { RAW_DIR } from "../src/lib/rag/config";
 import { embedPassages } from "../src/lib/rag/embed";
 import { writeIndex, type ChunkRow } from "../src/lib/rag/store";
@@ -69,10 +69,15 @@ async function loadPdfs(): Promise<Doc[]> {
   return docs;
 }
 
-/** Notes: markdown with a `---` front-matter block (title, url, audience, date). */
-async function loadNotes(): Promise<Doc[]> {
+/**
+ * Markdown with a `---` front-matter block (title, url, audience, date).
+ *   data/raw/notes   our hand-written notes (fees, ERP notice)
+ *   data/raw/ictukb  verified pages imported from the open ICTU knowledge base (npm run import:ictukb)
+ */
+async function loadMarkdown(folder: "notes" | "ictukb"): Promise<Doc[]> {
   const docs: Doc[] = [];
-  for (const file of await listFiles(path.join(RAW_DIR, "notes"), ".md")) {
+  const type = folder === "notes" ? "note" : "kb";
+  for (const file of await listFiles(path.join(RAW_DIR, folder), ".md")) {
     const raw = await readFile(file, "utf8");
     const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
     const meta: Record<string, string> = {};
@@ -82,10 +87,10 @@ async function loadNotes(): Promise<Doc[]> {
     }
     const name = path.basename(file, ".md");
     docs.push({
-      id: `note-${name}`,
+      id: `${type}-${name}`,
       title: meta.title ?? name,
       url: meta.url ?? "",
-      type: "note",
+      type,
       audience: meta.audience ?? "all",
       date: meta.date ?? "",
       text: (match?.[2] ?? raw).trim(),
@@ -95,13 +100,23 @@ async function loadNotes(): Promise<Doc[]> {
 }
 
 async function main() {
-  const docs = [...(await loadWeb()), ...(await loadPdfs()), ...(await loadNotes())];
+  const docs = [
+    ...(await loadWeb()),
+    ...(await loadPdfs()),
+    ...(await loadMarkdown("notes")),
+    ...(await loadMarkdown("ictukb")),
+  ];
   if (docs.length === 0) throw new Error("No raw data found. Run `npm run collect` first.");
   console.log(`Loaded ${docs.length} documents`);
 
-  // 1. CHUNK: each passage starts with its document title so it carries context on its own
+  // 1. CHUNK: each passage starts with its document title so it carries context on its own.
+  //    Markdown (notes, knowledge base) is split by heading so tables keep their labels.
   const chunks = docs.flatMap((doc) =>
-    chunkText(doc.text).map((text, i) => ({ doc, i, text: `${doc.title}\n\n${text}` })),
+    (doc.type === "note" || doc.type === "kb" ? chunkMarkdown(doc.text) : chunkText(doc.text)).map((text, i) => ({
+      doc,
+      i,
+      text: `${doc.title}\n\n${text}`,
+    })),
   );
   console.log(`Split into ${chunks.length} chunks. Embedding (first run downloads the model)...`);
 

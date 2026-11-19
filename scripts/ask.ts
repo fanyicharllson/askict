@@ -13,7 +13,7 @@ if (!question) {
 search(question).then((hits) => {
   console.log(`\nQ: ${question}\n`);
   hits.forEach((h, i) => {
-    console.log(`#${i + 1}  score ${h.score.toFixed(3)}  [${h.source_type}] ${h.title}`);
+    console.log(`#${i + 1}  rrf ${h.score.toFixed(4)}  vec#${h.vectorRank ?? "-"} kw#${h.keywordRank ?? "-"}  [${h.source_type}] ${h.title}`);
     console.log(`    ${h.url}`);
     console.log(`    ${h.text.replace(/\s+/g, " ").slice(0, 220)}...\n`);
   });
