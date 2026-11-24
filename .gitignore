@@ -49,3 +49,6 @@ next-env.d.ts
 # the official fee PDF contains bank account numbers; we commit its transcription (data/raw/notes) instead
 /data/raw/pdf/
 !.env.example
+
+# llama.cpp binaries (downloaded, see npm run llm)
+/tools/

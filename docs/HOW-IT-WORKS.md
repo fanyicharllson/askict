@@ -8,13 +8,17 @@ AskICT uses **two different AI models**, for two different jobs:
 
 | | Embedding model | Chat model (LLM) |
 |---|---|---|
-| Name | `multilingual-e5-small` | `openai/gpt-oss-120b` |
-| Where it runs | **On this laptop** (downloaded once into `data/models/`, about 130 MB) | **In the cloud**, on Groq's servers |
+| Name | `multilingual-e5-small` | `LFM3-1.7B` by Liquid AI (4-bit GGUF, 1.1 GB) |
+| Where it runs | **On this laptop** (downloaded once into `data/models/`, about 130 MB) | **On this laptop** too, served by llama.cpp (`npm run llm`) at `localhost:8080` |
 | Job | Turns text into a vector (a list of 384 numbers that captures its meaning) | Reads the passages we found and writes the answer |
 | Does it write answers? | No, never | Yes |
-| Cost | Free, works offline | Free tier with rate limits, needs `GROQ_API_KEY` |
+| Cost | Free, works offline | Free, works offline, **no API key** |
 
-So the "local model you downloaded" is the **embedding model**. It never talks to the student. It only helps us *find* the right passages. The answer itself is written by the LLM on Groq.
+Think of a **librarian** and a **writer**. The embedding model is the librarian: it only *finds* the right passages and never talks to the student. The LLM is the writer: it reads those passages and writes the answer. **Both run on this laptop**, so nothing leaves the machine and no API key is needed. (A cloud model on Groq can be switched on with `LLM_PROVIDER=groq` for a faster demo, but it is optional.)
+
+### Why LFM3-1.7B?
+
+The laptop has a 2-core CPU and no GPU, so the model must be small. LFM3-1.7B (Liquid AI, 2026) fits in about 1 GB at 4-bit, speaks French, follows instructions very well for its size (IFEval 96.7) and was trained to "answer from retrieved documents, or decline", which is exactly RAG. Its "thinking" mode is turned off (`--reasoning off`) so it answers directly. **llama.cpp** is the engine that runs GGUF models efficiently on CPUs; its `llama-server` exposes an OpenAI-compatible API on localhost that AskICT calls.
 
 ## Phase 1: building the knowledge base (done once, before anyone asks)
 
@@ -44,11 +48,11 @@ ictukb (46 pages) ──┘    data/raw     ~1000 chars  384 numbers  data/index
       ├─► B. keyword search (BM25) in LanceDB ─────────────────────────────► top 25 by exact words
       │
       ▼
-   C. merge both lists with Reciprocal Rank Fusion ──► best 8 passages
+   C. merge both lists with Reciprocal Rank Fusion ──► best 4 passages
       │
    D. build the prompt: rules + the 8 numbered passages + the conversation
       │
-   E. send to the LLM on Groq ──► answer streams back word by word, with [1] [2] citations
+   E. send to the local LLM (llama.cpp) ──► answer streams back word by word, with [1] [2] citations
       │
    F. the website shows the answer, clickable citations and the source list
 ```
@@ -57,9 +61,9 @@ Step by step:
 
 - **A. Vector search (semantic):** the question becomes a vector with the same local model (prefixed `query:`). LanceDB compares it with all ~650 stored vectors using **cosine similarity** and returns the 25 closest. This finds "ERP system overview" even if the student had written "the new student platform".
 - **B. Keyword search (lexical):** BM25 looks for the exact words "ERP". It's good at codes and names (`CSC 4121`, "Year 3", a lecturer's name) that vectors can miss.
-- **C. Fusion:** each passage gets `1/(60 + rank)` from each list, and the two are added. Passages that rank well in **both** lists rise to the top. News older than two years is slightly down-weighted. We keep the top 8.
-- **D. Augmentation:** the 8 passages are pasted into the system prompt, numbered `[1]`…`[8]`, with rules: answer only from them, cite them, be detailed, say "I don't know" if they don't contain the answer, never give passwords.
-- **E. Generation:** the prompt goes to `openai/gpt-oss-120b` on Groq. The model writes the answer from those passages only. Groq streams it back token by token.
+- **C. Fusion:** each passage gets `1/(60 + rank)` from each list, and the two are added. Passages that rank well in **both** lists rise to the top. News older than two years is slightly down-weighted. We keep the top 4 (the local model reads every token on the CPU, so fewer passages means a faster answer).
+- **D. Augmentation:** the 4 passages are pasted into the system prompt, numbered `[1]`…`[8]`, with rules: answer only from them, cite them, be detailed, say "I don't know" if they don't contain the answer, never give passwords.
+- **E. Generation:** the prompt goes to LFM3-1.7B running in llama.cpp on the laptop. It first *reads* the prompt (prefill, the slow part on a CPU), then *writes* the answer token by token (decode), streamed to the browser.
 - **F. Display:** `[2]` becomes a link to source 2, and the source list shows the pages actually cited. If the student is signed in, the conversation is saved in `data/app.db`.
 
 To see steps A to C yourself, without the LLM:
@@ -95,15 +99,18 @@ Each line shows `vec#` (rank in the vector search) and `kw#` (rank in the keywor
 - **BM25:** the classic keyword-ranking formula used by search engines. It rewards rare words that appear in a passage.
 - **Hybrid search:** vector search and keyword search combined.
 - **Reciprocal Rank Fusion (RRF):** a simple way to merge ranked lists: `score = Σ 1/(60 + rank)`.
-- **Top-k:** how many passages we send to the LLM (k = 8).
+- **Top-k:** how many passages we send to the LLM (k = 4 locally, 8 in cloud mode).
 - **Prompt / system prompt:** the instructions and context sent to the LLM before the question.
-- **Context window:** the maximum amount of text the LLM can read at once (131,072 tokens for gpt-oss-120b).
+- **Context window:** the maximum amount of text the LLM can read at once. LFM3 supports 256K tokens; we run it with 8,192 to save memory.
+- **GGUF / quantization:** GGUF is the file format llama.cpp uses. "Q4_K_M" means the weights are stored with about 4 bits each instead of 16, so the 1.7B model shrinks from 3.5 GB to 1.1 GB with little quality loss.
+- **llama.cpp:** open-source C/C++ engine that runs LLMs on ordinary CPUs. `llama-server` is its local web server.
+- **Prefill and decode:** prefill = the model reading the whole prompt; decode = generating the answer one token at a time.
 - **Token:** a piece of a word. LLMs read and write tokens.
-- **Temperature:** randomness of the LLM. We use 0.2 (low), so answers stick to the facts.
+- **Temperature:** randomness of the LLM. We use 0.1 (very low, as Liquid AI recommends), so answers stick to the facts.
 - **Hallucination:** when an LLM invents facts. RAG plus "answer only from context" plus citations reduce it.
 - **Citation:** the `[n]` that links an answer sentence to the passage it came from.
 - **Streaming:** sending the answer word by word as it's generated, instead of waiting for the whole text.
-- **Groq:** a cloud company that runs open LLMs very fast on its own chips (LPUs).
+- **Groq:** a cloud company that runs open LLMs very fast. Optional in AskICT, off by default.
 - **Multilingual:** the embedding model maps French and English into the same vector space, so a French question finds English passages.
 
 ## Questions you may be asked

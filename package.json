@@ -11,10 +11,12 @@
     "ingest": "tsx scripts/ingest.ts",
     "ask": "tsx scripts/ask.ts",
     "typecheck": "tsc --noEmit",
-    "import:ictukb": "tsx scripts/import-ictukb.ts"
+    "import:ictukb": "tsx scripts/import-ictukb.ts",
+    "llm": "node scripts/llm.mjs"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.63",
+    "@ai-sdk/openai-compatible": "^1.0.63",
     "@ai-sdk/react": "^2.0.293",
     "@base-ui/react": "^1.9.0",
     "@huggingface/transformers": "^4.3.2",

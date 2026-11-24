@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpIcon, MicIcon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, CloudIcon, HardDriveIcon, MicIcon, SquareIcon } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ function getRecognitionCtor(): SpeechRecognitionCtor | null {
 }
 
 export type VoiceLang = "en-US" | "fr-FR";
+export type ModelMode = "offline" | "online";
 
 type Props = {
   onSend: (text: string) => void;
@@ -32,10 +33,14 @@ type Props = {
   busy: boolean;
   lang: VoiceLang;
   onLangChange: (lang: VoiceLang) => void;
+  mode: ModelMode;
+  onModeChange: (mode: ModelMode) => void;
+  onlineAvailable: boolean;
   autoFocus?: boolean;
 };
 
-export function Composer({ onSend, onStop, busy, lang, onLangChange, autoFocus }: Props) {
+export function Composer(props: Props) {
+  const { onSend, onStop, busy, lang, onLangChange, mode, onModeChange, onlineAvailable, autoFocus } = props;
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
@@ -148,6 +153,43 @@ export function Composer({ onSend, onStop, busy, lang, onLangChange, autoFocus }
                 </button>
               </>
             )}
+            <div
+              role="radiogroup"
+              aria-label="AI model"
+              className="ml-1 flex h-7 items-center rounded-full border p-0.5 text-xs font-semibold"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === "offline"}
+                onClick={() => onModeChange("offline")}
+                title="Offline: the AI runs on this computer (LFM3-1.7B). No internet needed."
+                className={cn(
+                  "flex h-full items-center gap-1 rounded-full px-2.5 transition-colors",
+                  mode === "offline" ? "bg-brand text-white" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <HardDriveIcon className="size-3.5" /> Offline
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === "online"}
+                disabled={!onlineAvailable}
+                onClick={() => onModeChange("online")}
+                title={
+                  onlineAvailable
+                    ? "Online: a larger cloud model (Groq). Faster, needs internet."
+                    : "Online mode is off: no cloud API key is configured."
+                }
+                className={cn(
+                  "flex h-full items-center gap-1 rounded-full px-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                  mode === "online" ? "bg-brand text-white" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <CloudIcon className="size-3.5" /> Online
+              </button>
+            </div>
             {voiceError && <span className="ml-1 text-xs text-destructive">{voiceError}</span>}
           </div>
 

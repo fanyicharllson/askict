@@ -14,7 +14,7 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
  notices (.md) ─────┘   (raw)     (~1000   (384-dim  (data/index)   ◄── nearest 6 chunks ──┘
                                    chars)   vectors)                         │
                                                                              ▼
-                                                     LLM prompt = rules + 6 passages + question
+                                                     LLM prompt = rules + 4 passages + question
                                                                              │
                                                                              ▼
                                                            answer with [1] [2] citations
@@ -22,7 +22,7 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
 
 1. **Retrieval**: a local embedding model (`multilingual-e5-small`) turns the question into a vector, and LanceDB returns the passages whose vectors are closest (cosine similarity).
 2. **Augmentation**: those passages are inserted, numbered, into the prompt.
-3. **Generation**: the LLM (GPT-OSS 120B on Groq) answers using only those passages, cites them, and says when it does not know.
+3. **Generation**: the LLM (LFM3-1.7B, running locally with llama.cpp) answers using only those passages, cites them, and says when it does not know.
 
 ## Stack
 
@@ -32,18 +32,19 @@ Built for the Artificial Intelligence course (CA), ICT University, 2026.
 | Chat streaming | Vercel AI SDK |
 | Vector database | LanceDB (embedded, files in `data/index/`) |
 | Embeddings | `Xenova/multilingual-e5-small` via transformers.js (runs locally, free) |
-| LLM | GPT-OSS 120B via Groq (`openai/gpt-oss-120b`) |
+| LLM | LFM3-1.7B (4-bit GGUF) on llama.cpp, fully local, no API key (Groq optional) |
 
 ## Run it
 
 ```bash
 npm install
-cp .env.example .env.local      # add your GROQ_API_KEY
+cp .env.example .env.local      # no key needed for local mode
 npm run collect                 # download the website (≈2 min, polite 20 s delay)
 npm run import:ictukb           # import verified pages of the open ICTU knowledge base
 npm run ingest                  # chunk + embed + build the vector DB
 npm run ask -- "When do exams start?"   # test retrieval only
-npm run dev                     # http://localhost:3000
+npm run llm                     # terminal 1: start the local model (keep it open)
+npm run dev                     # terminal 2: http://localhost:3000
 ```
 
 Add documents by dropping PDFs in `data/raw/pdf/` or markdown notes in `data/raw/notes/`, then run `npm run ingest` again.

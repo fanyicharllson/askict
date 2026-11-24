@@ -23,7 +23,7 @@ import { Message, MessageContent, MessageResponse } from "@/components/ai-elemen
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 import { cn } from "@/lib/utils";
-import { Composer, type VoiceLang } from "./composer";
+import { Composer, type ModelMode, type VoiceLang } from "./composer";
 import { LogoMark, Orb } from "./logo";
 import { Sidebar, TOPICS, type ChatSummary } from "./sidebar";
 import { SignInDialog, type SessionUser } from "./sign-in-dialog";
@@ -68,9 +68,16 @@ const plainText = (md: string) => md.replace(/\[(\d+)\]/g, "").replace(/[*_#>`|]
 
 export function Chat() {
   const chatIdRef = useRef<string>("");
+  const modeRef = useRef<ModelMode>("offline");
+  const [mode, setModeState] = useState<ModelMode>("offline");
+  const [onlineAvailable, setOnlineAvailable] = useState(false);
   const [chatId, setChatId] = useState("");
   const [transport] = useState(
-    () => new DefaultChatTransport({ api: "/api/chat", body: () => ({ chatId: chatIdRef.current }) }),
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: () => ({ chatId: chatIdRef.current, mode: modeRef.current }),
+      }),
   );
   const [user, setUser] = useState<SessionUser | null>(null);
   const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -104,6 +111,17 @@ export function Chat() {
   useEffect(() => {
     selectChat(newId());
     if (navigator.language.toLowerCase().startsWith("fr")) setVoiceLang("fr-FR");
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((c: { onlineAvailable: boolean }) => {
+        setOnlineAvailable(c.onlineAvailable);
+        let saved: string | null = null;
+        try {
+          saved = localStorage.getItem("askict-mode");
+        } catch {}
+        if (saved === "online" && c.onlineAvailable) setMode("online");
+      })
+      .catch(() => {});
     fetch("/api/auth")
       .then((r) => r.json())
       .then((d) => {
@@ -113,6 +131,14 @@ export function Chat() {
       .catch(() => {});
     return () => window.speechSynthesis?.cancel();
   }, [refreshChats]);
+
+  function setMode(next: ModelMode) {
+    modeRef.current = next;
+    setModeState(next);
+    try {
+      localStorage.setItem("askict-mode", next);
+    } catch {}
+  }
 
   function send(text: string) {
     setDrawerOpen(false);
@@ -195,6 +221,22 @@ export function Chat() {
     setSpeakingId(message.id);
     synth.speak(utterance);
   }
+
+  const composerProps = {
+    onSend: send,
+    onStop: stop,
+    busy,
+    lang: voiceLang,
+    onLangChange: setVoiceLang,
+    mode,
+    onModeChange: setMode,
+    onlineAvailable,
+    autoFocus: true,
+  };
+  const waitingText =
+    mode === "offline"
+      ? "Reading ICT University sources on this computer… (offline model, can take up to a minute)"
+      : "Reading ICT University sources…";
 
   const sidebarProps = {
     user,
@@ -283,7 +325,7 @@ export function Chat() {
                 <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-[32px]">What would you like to know?</h1>
               </div>
               <div className="mt-8">
-                <Composer onSend={send} onStop={stop} busy={busy} lang={voiceLang} onLangChange={setVoiceLang} autoFocus />
+                <Composer {...composerProps} />
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {STARTERS.map(({ icon: Icon, title, question }, i) => (
@@ -391,7 +433,7 @@ export function Chat() {
                               <MessageResponse isAnimating={streaming}>{linkCitations(text, sources)}</MessageResponse>
                             </MessageContent>
                           ) : (
-                            <Shimmer className="text-sm">Reading ICT University sources…</Shimmer>
+                            <Shimmer className="text-sm">{waitingText}</Shimmer>
                           )}
 
                           {!streaming && cited.length > 0 && (
@@ -448,7 +490,7 @@ export function Chat() {
                 {status === "submitted" && messages.at(-1)?.role === "user" && (
                   <div className="flex gap-3">
                     <LogoMark className="size-7" />
-                    <Shimmer className="text-sm">Searching ICT University sources…</Shimmer>
+                    <Shimmer className="text-sm">{waitingText}</Shimmer>
                   </div>
                 )}
 
@@ -465,7 +507,7 @@ export function Chat() {
             </Conversation>
 
             <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4">
-              <Composer onSend={send} onStop={stop} busy={busy} lang={voiceLang} onLangChange={setVoiceLang} autoFocus />
+              <Composer {...composerProps} />
               <p className={cn("mt-2 text-center text-xs text-muted-foreground")}>
                 {user ? (
                   "This chat is saved to your account."
