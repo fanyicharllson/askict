@@ -60,3 +60,6 @@ Today's date is ${today}.
 CONTEXT:
 ${context}`;
 }
+
+/** Length of the fixed rules at the start of the prompt (kept in llama.cpp's prompt cache). */
+export const rulesLength = (compact: boolean) => (compact ? RULES_COMPACT : RULES_FULL).length;

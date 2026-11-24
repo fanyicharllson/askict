@@ -20,10 +20,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Conversation, ConversationContent, ConversationScrollButton } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "@/components/ai-elements/sources";
 import { cn } from "@/lib/utils";
 import { Composer, type ModelMode, type VoiceLang } from "./composer";
+import { applyProgress, ProgressSteps, type ProgressData, type ProgressState } from "./progress-steps";
 import { LogoMark, Orb } from "./logo";
 import { Sidebar, TOPICS, type ChatSummary } from "./sidebar";
 import { SignInDialog, type SessionUser } from "./sign-in-dialog";
@@ -93,14 +93,42 @@ export function Chat() {
     if (res.ok) setChats((await res.json()).chats);
   }, []);
 
+  const [progress, setProgress] = useState<ProgressState>([]);
+  const [progressStart, setProgressStart] = useState(0);
+  // finished answers keep their steps, shown as a folded "Answered in 34s · 9 steps" line
+  const [timeline, setTimeline] = useState<Record<string, { steps: ProgressState; startedAt: number; finishedAt: number }>>({});
+
   const { messages, sendMessage, status, stop, regenerate, setMessages, error } = useChat({
     transport,
-    onFinish: () => {
+    onFinish: ({ message }) => {
       if (user) void refreshChats();
+      const steps = progressRef.current;
+      if (steps.length) {
+        setTimeline((t) => ({ ...t, [message.id]: { steps, startedAt: progressStartRef.current, finishedAt: Date.now() } }));
+      }
+    },
+    // live progress steps sent by the server (understand → vector → keywords → rank → read → write)
+    onData: (part) => {
+      if (part.type !== "data-progress") return;
+      progressRef.current = applyProgress(progressRef.current, part.data as ProgressData);
+      setProgress(progressRef.current);
     },
   });
 
   const busy = status === "submitted" || status === "streaming";
+  const progressStartRef = useRef(0);
+  const progressRef = useRef<ProgressState>([]);
+
+  // every new request (send, retry, edit) starts a fresh progress panel
+  useEffect(() => {
+    if (status === "submitted") {
+      const now = Date.now();
+      progressRef.current = [];
+      setProgress([]);
+      setProgressStart(now);
+      progressStartRef.current = now;
+    }
+  }, [status]);
   const empty = messages.length === 0;
 
   function selectChat(id: string) {
@@ -233,10 +261,6 @@ export function Chat() {
     onlineAvailable,
     autoFocus: true,
   };
-  const waitingText =
-    mode === "offline"
-      ? "Reading ICT University sources on this computer… (offline model, can take up to a minute)"
-      : "Reading ICT University sources…";
 
   const sidebarProps = {
     user,
@@ -428,12 +452,26 @@ export function Chat() {
                       <div className="flex gap-3">
                         <LogoMark className="mt-0.5 size-7" />
                         <div className="min-w-0 flex-1">
-                          {text ? (
+                          {streaming ? (
+                            <ProgressSteps
+                              steps={progress}
+                              startedAt={progressStart}
+                              live
+                              liveWords={text ? text.trim().split(/\s+/).length : 0}
+                            />
+                          ) : timeline[message.id] ? (
+                            <ProgressSteps
+                              steps={timeline[message.id].steps}
+                              startedAt={timeline[message.id].startedAt}
+                              finishedAt={timeline[message.id].finishedAt}
+                              live={false}
+                              sourcesCount={cited.length}
+                            />
+                          ) : null}
+                          {text && (
                             <MessageContent className="text-[15px] leading-relaxed text-ink">
                               <MessageResponse isAnimating={streaming}>{linkCitations(text, sources)}</MessageResponse>
                             </MessageContent>
-                          ) : (
-                            <Shimmer className="text-sm">{waitingText}</Shimmer>
                           )}
 
                           {!streaming && cited.length > 0 && (
@@ -490,7 +528,9 @@ export function Chat() {
                 {status === "submitted" && messages.at(-1)?.role === "user" && (
                   <div className="flex gap-3">
                     <LogoMark className="size-7" />
-                    <Shimmer className="text-sm">{waitingText}</Shimmer>
+                    <div className="min-w-0 flex-1">
+                      <ProgressSteps steps={progress} startedAt={progressStart} live />
+                    </div>
                   </div>
                 )}
 
